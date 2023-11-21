@@ -1,25 +1,25 @@
 'use client';
 
-import axios from "axios";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "react-hot-toast";
-import { Range } from "react-date-range";
-import { useRouter } from "next/navigation";
+import axios from 'axios';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'react-hot-toast';
+import { Range } from 'react-date-range';
+import { useRouter } from 'next/navigation';
 import { differenceInDays, eachDayOfInterval } from 'date-fns';
 
-import useLoginModal from "@/app/hooks/useLoginModal";
-import { SafeListing, SafeReservation, SafeUser } from "@/app/types";
+import useLoginModal from '@/app/hooks/useLoginModal';
+import { SafeListing, SafeReservation, SafeUser } from '@/app/types';
 
-import Container from "@/app/components/Container";
-import { categories } from "@/app/components/navbar/Categories";
-import ListingHead from "@/app/components/listings/ListingHead";
-import ListingInfo from "@/app/components/listings/ListingInfo";
-import ListingReservation from "@/app/components/listings/ListingReservation";
+import Container from '@/app/components/Container';
+import { categories } from '@/app/components/navbar/Categories';
+import ListingHead from '@/app/components/listings/ListingHead';
+import ListingInfo from '@/app/components/listings/ListingInfo';
+import ListingReservation from '@/app/components/listings/ListingReservation';
 
 const initialDateRange = {
   startDate: new Date(),
   endDate: new Date(),
-  key: 'selection'
+  key: 'selection',
 };
 
 interface ListingClientProps {
@@ -33,7 +33,7 @@ interface ListingClientProps {
 const ListingClient: React.FC<ListingClientProps> = ({
   listing,
   reservations = [],
-  currentUser
+  currentUser,
 }) => {
   const loginModal = useLoginModal();
   const router = useRouter();
@@ -44,7 +44,7 @@ const ListingClient: React.FC<ListingClientProps> = ({
     reservations.forEach((reservation: any) => {
       const range = eachDayOfInterval({
         start: new Date(reservation.startDate),
-        end: new Date(reservation.endDate)
+        end: new Date(reservation.endDate),
       });
 
       dates = [...dates, ...range];
@@ -54,8 +54,7 @@ const ListingClient: React.FC<ListingClientProps> = ({
   }, [reservations]);
 
   const category = useMemo(() => {
-     return categories.find((items) => 
-      items.label === listing.category);
+    return categories.find((items) => items.label === listing.category);
   }, [listing.category]);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -63,16 +62,17 @@ const ListingClient: React.FC<ListingClientProps> = ({
   const [dateRange, setDateRange] = useState<Range>(initialDateRange);
 
   const onCreateReservation = useCallback(() => {
-      if (!currentUser) {
-        return loginModal.onOpen();
-      }
-      setIsLoading(true);
+    if (!currentUser) {
+      return loginModal.onOpen();
+    }
+    setIsLoading(true);
 
-      axios.post('/api/reservations', {
+    axios
+      .post('/api/reservations', {
         totalPrice,
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,
-        listingId: listing?.id
+        listingId: listing?.id,
       })
       .then(() => {
         toast.success('Listing reserved!');
@@ -84,24 +84,13 @@ const ListingClient: React.FC<ListingClientProps> = ({
       })
       .finally(() => {
         setIsLoading(false);
-      })
-  },
-  [
-    totalPrice, 
-    dateRange, 
-    listing?.id,
-    router,
-    currentUser,
-    loginModal
-  ]);
+      });
+  }, [totalPrice, dateRange, listing?.id, router, currentUser, loginModal]);
 
   useEffect(() => {
     if (dateRange.startDate && dateRange.endDate) {
-      const dayCount = differenceInDays(
-        dateRange.endDate, 
-        dateRange.startDate
-      );
-      
+      const dayCount = differenceInDays(dateRange.endDate, dateRange.startDate);
+
       if (dayCount && listing.price) {
         setTotalPrice(dayCount * listing.price);
       } else {
@@ -110,9 +99,9 @@ const ListingClient: React.FC<ListingClientProps> = ({
     }
   }, [dateRange, listing.price]);
 
-  return ( 
+  return (
     <Container>
-      <div 
+      <div
         className="
           max-w-screen-lg 
           mx-auto
@@ -126,7 +115,7 @@ const ListingClient: React.FC<ListingClientProps> = ({
             id={listing.id}
             currentUser={currentUser}
           />
-          <div 
+          <div
             className="
               grid 
               grid-cols-1 
@@ -144,7 +133,7 @@ const ListingClient: React.FC<ListingClientProps> = ({
               bathroomCount={listing.bathroomCount}
               locationValue={listing.locationValue}
             />
-            <div 
+            <div
               className="
                 order-first 
                 mb-10 
@@ -166,7 +155,7 @@ const ListingClient: React.FC<ListingClientProps> = ({
         </div>
       </div>
     </Container>
-   );
-}
- 
+  );
+};
+
 export default ListingClient;

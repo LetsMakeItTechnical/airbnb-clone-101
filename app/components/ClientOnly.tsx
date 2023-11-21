@@ -6,22 +6,16 @@ interface ClientOnlyProps {
   children: React.ReactNode;
 }
 
-const ClientOnly: React.FC<ClientOnlyProps> = ({ 
-  children
-}) => {
+const ClientOnly: React.FC<ClientOnlyProps> = ({ children }) => {
   const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
-      setHasMounted(true);
-  }, [])
+    setHasMounted(true);
+  }, []);
 
   if (!hasMounted) return null;
 
-  return (
-    <>
-      {children}
-    </>
-  );
+  return <>{children}</>;
 };
 
 export default ClientOnly;

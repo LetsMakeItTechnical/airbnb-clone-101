@@ -1,4 +1,5 @@
-import prisma from "@/app/libs/prismadb";
+import prisma from '@/app/libs/prismadb';
+import { CacheManager } from '@/utils/cache/cache-manager';
 
 export interface IListingsParams {
   userId?: string;
@@ -11,15 +12,28 @@ export interface IListingsParams {
   category?: string;
 }
 
-export default async function getListings(
-  params: IListingsParams
-) {
+type SafeListings = {
+  createdAt: string;
+  id: string;
+  title: string;
+  description: string;
+  imageSrc: string;
+  category: string;
+  roomCount: number;
+  bathroomCount: number;
+  guestCount: number;
+  locationValue: string;
+  userId: string;
+  price: number;
+}[];
+
+export default async function getListings(params: IListingsParams) {
   try {
     const {
       userId,
-      roomCount, 
-      guestCount, 
-      bathroomCount, 
+      roomCount,
+      guestCount,
+      bathroomCount,
       locationValue,
       startDate,
       endDate,
@@ -38,20 +52,20 @@ export default async function getListings(
 
     if (roomCount) {
       query.roomCount = {
-        gte: +roomCount
-      }
+        gte: +roomCount,
+      };
     }
 
     if (guestCount) {
       query.guestCount = {
-        gte: +guestCount
-      }
+        gte: +guestCount,
+      };
     }
 
     if (bathroomCount) {
       query.bathroomCount = {
-        gte: +bathroomCount
-      }
+        gte: +bathroomCount,
+      };
     }
 
     if (locationValue) {
@@ -65,23 +79,29 @@ export default async function getListings(
             OR: [
               {
                 endDate: { gte: startDate },
-                startDate: { lte: startDate }
+                startDate: { lte: startDate },
               },
               {
                 startDate: { lte: endDate },
-                endDate: { gte: endDate }
-              }
-            ]
-          }
-        }
-      }
+                endDate: { gte: endDate },
+              },
+            ],
+          },
+        },
+      };
     }
+
+    const cacheKey = `getListings:${JSON.stringify(query)}`;
+    const cacheManager = new CacheManager();
+    const cachedData = await cacheManager.getDataFromCache<SafeListings>(cacheKey);
+
+    if (cachedData) return cachedData;
 
     const listings = await prisma.listing.findMany({
       where: query,
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     });
 
     const safeListings = listings.map((listing) => ({
@@ -89,6 +109,7 @@ export default async function getListings(
       createdAt: listing.createdAt.toISOString(),
     }));
 
+    void cacheManager.setCache(cacheKey, JSON.stringify(safeListings));
     return safeListings;
   } catch (error: any) {
     throw new Error(error);
